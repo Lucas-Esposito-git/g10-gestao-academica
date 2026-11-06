@@ -1,0 +1,20 @@
+.env
+**/.env
+**/target/
+**/node_modules/
+**/dist/
+**/.idea/
+**/.vscode/
+*.class
+*.log
+*.swp
+# Não versionar dados físicos do PostgreSQL
+pgdata/
+bd/data/
+bd/pgdata/
+postgres_data/
+**/PG_VERSION
+**/base/
+**/global/
+**/pg_wal/
+.DS_Store

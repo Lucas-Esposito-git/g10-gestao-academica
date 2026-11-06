@@ -1,0 +1,92 @@
+name: g10-academico
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: academico
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-PostgresDemo123!}
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./bd/backup.sql:/docker-entrypoint-initdb.d/01-backup.sql:ro
+      - ./bd/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./bd/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    networks:
+      interna:
+        ipv4_address: 172.28.60.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d academico"]
+      interval: 5s
+      timeout: 3s
+      retries: 25
+    restart: unless-stopped
+
+  pgbouncer:
+    build: ./pgbouncer
+    environment:
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-AuthDBDemo123!}
+      PROFESSOR_DB_PASSWORD: ${PROFESSOR_DB_PASSWORD:-ProfessorDBDemo123!}
+      COORD_DB_PASSWORD: ${COORD_DB_PASSWORD:-CoordDBDemo123!}
+      READER_DB_PASSWORD: ${READER_DB_PASSWORD:-ReaderDBDemo123!}
+      PGBOUNCER_ADMIN_PASSWORD: ${PGBOUNCER_ADMIN_PASSWORD:-PoolAdminDemo123!}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      interna:
+        ipv4_address: 172.28.60.11
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 6432"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DB_JDBC_URL: jdbc:postgresql://pgbouncer:6432/academico?prepareThreshold=0
+      AUTH_DB_USERNAME: usr_auth
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-AuthDBDemo123!}
+      PROFESSOR_DB_USERNAME: usr_professor
+      PROFESSOR_DB_PASSWORD: ${PROFESSOR_DB_PASSWORD:-ProfessorDBDemo123!}
+      COORD_DB_USERNAME: usr_coordenador
+      COORD_DB_PASSWORD: ${COORD_DB_PASSWORD:-CoordDBDemo123!}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-replace-this-secret-with-a-random-string-123456789}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+    networks:
+      interna:
+        ipv4_address: 172.28.60.12
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 35s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    networks:
+      interna:
+        ipv4_address: 172.28.60.13
+    restart: unless-stopped
+
+networks:
+  interna:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.60.0/24
+
+volumes:
+  postgres_data:

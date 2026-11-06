@@ -1,0 +1,7 @@
+# OPCIONAL: somente para executar Spring Boot no Windows sem Docker.
+# Use: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db pgbouncer
+# O PgBouncer será acessível apenas em localhost:6432, sem expor PostgreSQL diretamente.
+services:
+  pgbouncer:
+    ports:
+      - "127.0.0.1:6432:6432"

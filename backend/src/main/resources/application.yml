@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  error:
+    include-message: never
+spring:
+  application:
+    name: g10-academico
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+app:
+  db:
+    url: ${DB_JDBC_URL:jdbc:postgresql://localhost:6432/academico?prepareThreshold=0}
+    auth-user: ${AUTH_DB_USERNAME:usr_auth}
+    auth-password: ${AUTH_DB_PASSWORD:AuthDBDemo123!}
+    professor-user: ${PROFESSOR_DB_USERNAME:usr_professor}
+    professor-password: ${PROFESSOR_DB_PASSWORD:ProfessorDBDemo123!}
+    coord-user: ${COORD_DB_USERNAME:usr_coordenador}
+    coord-password: ${COORD_DB_PASSWORD:CoordDBDemo123!}
+  jwt-secret: ${JWT_SECRET:dev-only-replace-this-secret-with-a-random-string-123456789}
